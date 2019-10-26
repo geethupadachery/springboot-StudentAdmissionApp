@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
@@ -23,7 +22,6 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.sjsu.aws.data.DataObject;
 
@@ -37,7 +35,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.Delete;
 import software.amazon.awssdk.services.s3.model.DeleteBucketRequest;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListBucketsRequest;
@@ -62,6 +59,10 @@ public class S3BucketService {
 	private S3Client s3Client;
 	
 	private AmazonS3 s3;
+	
+	private static final String AWS_BUCKET = "cloud-project-studentapp";
+	
+	private static final String AWS_BUCKET_CDN = "https://cloud-project-studentapp.s3-us-west-1.amazonaws.com";
 
 	@PostConstruct
 	public void initialize() {
@@ -178,7 +179,6 @@ public class S3BucketService {
 		return names;
 	}
 	
-
 	public String uploadFile(MultipartFile multipartFile, String username) {
 		String fileUrl = "";
 		try {
@@ -186,8 +186,8 @@ public class S3BucketService {
 			System.out.println("username is " + username);
 			File file = convertMultiPartToFile(multipartFile);
 			String fileName = generateFileName(multipartFile);
-			fileUrl = "https://cloud-project-studentapp.s3-us-west-1.amazonaws.com" + "/"
-					+ "cloud-project-studentapp" + "/" + fileName;
+			fileUrl = "https://cloud-project-studentapp.s3-us-west-1.amazonaws.com" + "/" + "cloud-project-studentapp"
+					+ "/" + fileName;
 			uploadFileTos3bucket(fileName, file, username);
 			file.delete();
 		} catch (Exception e) {
@@ -219,17 +219,15 @@ public class S3BucketService {
 
 	public void deleteFile(String fileName, String username) {
 		System.out.println("Inside delete file");
-        try {
-        	//s3.deleteObject(new DeleteObjectRequest("student-admission-app-bucket", fileName));
-        	//s3.deleteObject("cloud-project-studentapp", username+"/"+fileName);
-        	DeleteObjectRequest deleteObjectRequest =
-        			  DeleteObjectRequest.builder().bucket("cloud-project-studentapp").key(username+"/"+fileName) .build();
-        			  s3Client.deleteObject(deleteObjectRequest);
-        	System.out.println("delete completed");
-        } catch (AmazonServiceException ex) {
-            //logger.error("error [" + ex.getMessage() + "] occurred while removing [" + fileName + "] ");
-        	ex.printStackTrace();
-        }
-		
+		try {
+			com.amazonaws.services.s3.model.DeleteObjectRequest deleteObjectRequest = new com.amazonaws.services.s3.model.DeleteObjectRequest(
+					AWS_BUCKET, username + "/" + fileName);
+
+			s3.deleteObject(deleteObjectRequest);
+			System.out.println("delete completed");
+		} catch (AmazonServiceException ex) {
+			ex.printStackTrace();
+		}
+
 	}
 }
